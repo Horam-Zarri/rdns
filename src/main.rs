@@ -77,7 +77,7 @@ fn main() {
 
         Commands::Add(raw_dns) => {
 
-            if let Err(_) = DnsServer::verify_dns(&raw_dns) {
+            if DnsServer::verify_dns(&raw_dns).is_err() {
                 eprintln!("Invalid DNS address format!");
                 return;
             }
@@ -85,8 +85,7 @@ fn main() {
             let mut servers = dns::interface::server_list(CONFIG_FILE);
 
             if servers.iter()
-                .find(|&dns| dns.conflicts_with(&raw_dns))
-                .is_some()
+                .any(|dns| dns.conflicts_with(&raw_dns))
             {
                 eprintln!("Another DNS with same name/addr exists!");
                 return;
@@ -104,7 +103,7 @@ fn main() {
             for name in names {
                 if let Some((dns_pos, _)) = servers.iter()
                     .enumerate()
-                    .find(|(idx, dns)| dns.name == name)
+                    .find(|(_, dns)| dns.name == name)
                 {
                     servers.remove(dns_pos);
                     println!("Removed DNS server: {name}");
@@ -133,7 +132,7 @@ fn main() {
                 );
                 match dns_res {
                     Ok(dns) => dns.set_dns(),
-                    Err(e) => eprintln!("Invalid DNS address format!"),
+                    Err(_) => eprintln!("Invalid DNS address format!"),
                 }
             }
         }

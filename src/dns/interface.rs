@@ -34,7 +34,7 @@ pub fn write_servers(servers: &Vec<DnsServer>, config_file: &str) {
         .truncate(true)
         .open(config_file)
         .unwrap()
-        .write(str_rep.as_bytes())
+        .write_all(str_rep.as_bytes())
         .unwrap();
 }
 

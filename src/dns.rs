@@ -31,6 +31,7 @@ impl DnsServer {
         Ok(dns)
     }
 
+    #[allow(clippy::unit_arg)]
     pub fn verify_dns(&self) -> Result<(), AddrParseError> {
         Ok({
             if self.v6 {
