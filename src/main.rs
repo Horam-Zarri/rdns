@@ -1,9 +1,9 @@
 mod dns;
 
+use crate::dns::interface::server_list;
+use crate::dns::DnsServer;
 use clap::Parser;
 use clap::Subcommand;
-use crate::dns::DnsServer;
-use crate::dns::interface::server_list;
 
 const CONFIG_FILE: &str = "rdns_servers.json";
 
@@ -14,9 +14,7 @@ const CONFIG_FILE: &str = "rdns_servers.json";
 struct Cli {
     #[command(subcommand)]
     command: Commands,
-
 }
-
 
 #[derive(Subcommand)]
 pub enum Commands {
@@ -56,27 +54,24 @@ pub enum Commands {
         /// Set to DHCP
         #[arg(long)]
         dhcp: bool,
-    }
+    },
 }
 
-
-
 fn main() {
-
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Set {name} => {
+        Commands::Set { name } => {
             let servers = dns::interface::server_list(CONFIG_FILE);
 
-            servers.iter()
+            servers
+                .iter()
                 .find(|&dns| dns.name == name)
                 .expect("Specified DNS does not exist in list")
                 .set_dns();
         }
 
         Commands::Add(raw_dns) => {
-
             if DnsServer::verify_dns(&raw_dns).is_err() {
                 eprintln!("Invalid DNS address format!");
                 return;
@@ -84,9 +79,7 @@ fn main() {
 
             let mut servers = dns::interface::server_list(CONFIG_FILE);
 
-            if servers.iter()
-                .any(|dns| dns.conflicts_with(&raw_dns))
-            {
+            if servers.iter().any(|dns| dns.conflicts_with(&raw_dns)) {
                 eprintln!("Another DNS with same name/addr exists!");
                 return;
             }
@@ -96,19 +89,16 @@ fn main() {
             dns::interface::write_servers(&servers, CONFIG_FILE);
         }
 
-        Commands::Rem{names} => {
-
+        Commands::Rem { names } => {
             let mut servers = dns::interface::server_list(CONFIG_FILE);
 
             for name in names {
-                if let Some((dns_pos, _)) = servers.iter()
-                    .enumerate()
-                    .find(|(_, dns)| dns.name == name)
+                if let Some((dns_pos, _)) =
+                    servers.iter().enumerate().find(|(_, dns)| dns.name == name)
                 {
                     servers.remove(dns_pos);
                     println!("Removed DNS server: {name}");
-                }
-                else {
+                } else {
                     println!("DNS server {name} not found in list!");
                 }
             }
@@ -119,16 +109,15 @@ fn main() {
             primary,
             secondary,
             v6,
-            dhcp
+            dhcp,
         } => {
             if dhcp {
                 DnsServer::set_dhcp(v6);
-            }
-            else {
+            } else {
                 let dns_res = DnsServer::build(
                     primary.expect("clap should avoid empty servers when DHCP is not set"),
                     secondary.expect("clap should avoid empty servers when DHCP is not set"),
-                    v6
+                    v6,
                 );
                 match dns_res {
                     Ok(dns) => dns.set_dns(),
@@ -137,9 +126,8 @@ fn main() {
             }
         }
 
-        Commands::List => server_list(CONFIG_FILE).iter()
+        Commands::List => server_list(CONFIG_FILE)
+            .iter()
             .for_each(|dns| println!("{dns}")),
     }
 }
-
-

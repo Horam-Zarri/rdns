@@ -1,14 +1,13 @@
 pub mod interface;
 
+use clap::Args;
+use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::net::{AddrParseError, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
-use clap::Args;
-use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Args, Clone)]
 pub struct DnsServer {
-
     /// Primary DNS address
     primary: String,
 
@@ -24,9 +23,13 @@ pub struct DnsServer {
 }
 
 impl DnsServer {
-
     pub fn build(primary: String, secondary: String, v6: bool) -> Result<Self, AddrParseError> {
-        let dns = Self {primary, secondary, v6, name: "".to_string()};
+        let dns = Self {
+            primary,
+            secondary,
+            v6,
+            name: "".to_string(),
+        };
         dns.verify_dns()?;
         Ok(dns)
     }
@@ -37,8 +40,7 @@ impl DnsServer {
             if self.v6 {
                 Ipv6Addr::from_str(&self.primary)?;
                 Ipv6Addr::from_str(&self.secondary)?;
-            }
-            else {
+            } else {
                 Ipv4Addr::from_str(&self.primary)?;
                 Ipv4Addr::from_str(&self.secondary)?;
             }
@@ -47,7 +49,7 @@ impl DnsServer {
 
     pub fn conflicts_with(&self, other: &Self) -> bool {
         (self.primary == other.primary && self.secondary == other.secondary)
-        || self.name == other.name
+            || self.name == other.name
     }
 
     pub fn set_dns(&self) {
@@ -56,8 +58,7 @@ impl DnsServer {
                 eprintln!("Can not set DNS :\n{e:?}");
                 std::process::abort();
             }
-        }
-        else {
+        } else {
             panic!("Only Windows is supported for now!");
         }
     }
@@ -68,8 +69,7 @@ impl DnsServer {
                 eprintln!("Can not set DNS:\n{e:?}");
                 std::process::abort();
             }
-        }
-        else {
+        } else {
             panic!("Only Windows is supported for now!");
         }
     }
@@ -77,16 +77,13 @@ impl DnsServer {
 
 impl Display for DnsServer {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:\tPrimary = [{}]\tSecondary = [{}]\tIPv{}",
-            self.name, self.primary, self.secondary,
-            if self.v6 {"6"} else {"4"})
+        write!(
+            f,
+            "{}:\tPrimary = [{}]\tSecondary = [{}]\tIPv{}",
+            self.name,
+            self.primary,
+            self.secondary,
+            if self.v6 { "6" } else { "4" }
+        )
     }
 }
-
-
-
-
-
-
-
-
