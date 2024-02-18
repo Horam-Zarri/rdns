@@ -1,9 +1,7 @@
 mod dns;
 
-use std::str::FromStr;
-use std::io::{Read, Write};
 use clap::Parser;
-use clap::{Args, Subcommand};
+use clap::Subcommand;
 use crate::dns::DnsServer;
 use crate::dns::interface::server_list;
 

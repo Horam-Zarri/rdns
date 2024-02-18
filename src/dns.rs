@@ -1,7 +1,7 @@
 pub mod interface;
 
-use std::fmt::{Debug, Display, Formatter, write};
-use std::net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr};
+use std::fmt::{Display, Formatter};
+use std::net::{AddrParseError, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 use clap::Args;
 use serde::{Deserialize, Serialize};
