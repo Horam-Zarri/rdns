@@ -69,7 +69,7 @@ fn main() {
 
     match cli.command {
         Commands::Set {name} => {
-            let servers = dns::interface::server_list();
+            let servers = dns::interface::server_list(CONFIG_FILE);
 
             servers.iter()
                 .find(|&dns| dns.name == name)
@@ -84,7 +84,7 @@ fn main() {
                 return;
             }
 
-            let mut servers = dns::interface::server_list();
+            let mut servers = dns::interface::server_list(CONFIG_FILE);
 
             if servers.iter()
                 .find(|&dns| dns.conflicts_with(&raw_dns))
@@ -96,12 +96,12 @@ fn main() {
 
             servers.push(raw_dns);
 
-            dns::interface::write_servers(&servers);
+            dns::interface::write_servers(&servers, CONFIG_FILE);
         }
 
         Commands::Rem{names} => {
 
-            let mut servers = dns::interface::server_list();
+            let mut servers = dns::interface::server_list(CONFIG_FILE);
 
             for name in names {
                 if let Some((dns_pos, _)) = servers.iter()
@@ -116,7 +116,7 @@ fn main() {
                 }
             }
 
-            dns::interface::write_servers(&servers);
+            dns::interface::write_servers(&servers, CONFIG_FILE);
         }
         Commands::Direct {
             primary,
@@ -140,7 +140,7 @@ fn main() {
             }
         }
 
-        Commands::List => server_list().iter()
+        Commands::List => server_list(CONFIG_FILE).iter()
             .for_each(|dns| println!("{dns}")),
     }
 }

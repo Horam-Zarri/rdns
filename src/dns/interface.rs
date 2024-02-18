@@ -3,13 +3,12 @@ use std::fs::{File, OpenOptions};
 use std::io;
 use std::io::{Read, Write};
 use std::process::Command;
-use crate::CONFIG_FILE;
 use crate::dns::DnsServer;
 
 
-pub fn server_list() -> Vec<DnsServer> {
+pub fn server_list(config_file: &str) -> Vec<DnsServer> {
 
-    if let Ok(mut file) = File::open(CONFIG_FILE) {
+    if let Ok(mut file) = File::open(config_file) {
         let mut contents = String::new();
         file.read_to_string(&mut contents).unwrap();
 
@@ -21,19 +20,19 @@ pub fn server_list() -> Vec<DnsServer> {
         }
     }
     else {
-        File::create(CONFIG_FILE).expect("Could not create config file!");
+        File::create(config_file).expect("Could not create config file!");
         Vec::new()
     }
 
 }
-pub fn write_servers(servers: &Vec<DnsServer>) {
+pub fn write_servers(servers: &Vec<DnsServer>, config_file: &str) {
 
     let str_rep = serde_json::to_string(&servers).unwrap();
 
     OpenOptions::new()
         .write(true)
         .truncate(true)
-        .open(CONFIG_FILE)
+        .open(config_file)
         .unwrap()
         .write(str_rep.as_bytes())
         .unwrap();
