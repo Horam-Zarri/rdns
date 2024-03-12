@@ -1,11 +1,10 @@
 mod dns;
+mod interface;
 
-use crate::dns::interface::server_list;
 use crate::dns::DnsServer;
+use crate::interface::DnsInterface;
 use clap::Parser;
 use clap::Subcommand;
-
-const CONFIG_FILE: &str = "rdns_servers.json";
 
 #[derive(Parser)]
 #[command(name = "rdns")]
@@ -59,16 +58,19 @@ pub enum Commands {
 
 fn main() {
     let cli = Cli::parse();
+    let interface = DnsInterface::new();
 
     match cli.command {
         Commands::Set { name } => {
-            let servers = dns::interface::server_list(CONFIG_FILE);
+            let server_list = interface.server_list();
 
-            servers
-                .iter()
-                .find(|&dns| dns.name == name)
-                .expect("Specified DNS does not exist in list")
-                .set_dns();
+            interface.set_dns_static(
+                &server_list
+                    .iter()
+                    .find(|&dns| dns.name == name)
+                    .expect("Specified DNS does not exist in list")
+                    .clone(),
+            );
         }
 
         Commands::Add(raw_dns) => {
@@ -77,7 +79,7 @@ fn main() {
                 return;
             }
 
-            let mut servers = dns::interface::server_list(CONFIG_FILE);
+            let mut servers = interface.server_list();
 
             if servers.iter().any(|dns| dns.conflicts_with(&raw_dns)) {
                 eprintln!("Another DNS with same name/addr exists!");
@@ -85,12 +87,11 @@ fn main() {
             }
 
             servers.push(raw_dns);
-
-            dns::interface::write_servers(&servers, CONFIG_FILE);
+            interface.write_servers(&servers);
         }
 
         Commands::Rem { names } => {
-            let mut servers = dns::interface::server_list(CONFIG_FILE);
+            let mut servers = interface.server_list();
 
             for name in names {
                 if let Some((dns_pos, _)) =
@@ -103,7 +104,7 @@ fn main() {
                 }
             }
 
-            dns::interface::write_servers(&servers, CONFIG_FILE);
+            interface.write_servers(&servers);
         }
         Commands::Direct {
             primary,
@@ -112,7 +113,7 @@ fn main() {
             dhcp,
         } => {
             if dhcp {
-                DnsServer::set_dhcp(v6);
+                interface.set_dns_dhcp(v6);
             } else {
                 let dns_res = DnsServer::build(
                     primary.expect("clap should avoid empty servers when DHCP is not set"),
@@ -120,13 +121,14 @@ fn main() {
                     v6,
                 );
                 match dns_res {
-                    Ok(dns) => dns.set_dns(),
+                    Ok(ref dns_server) => interface.set_dns_static(dns_server),
                     Err(_) => eprintln!("Invalid DNS address format!"),
                 }
             }
         }
 
-        Commands::List => server_list(CONFIG_FILE)
+        Commands::List => interface
+            .server_list()
             .iter()
             .for_each(|dns| println!("{dns}")),
     }
