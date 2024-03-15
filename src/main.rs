@@ -58,13 +58,12 @@ pub enum Commands {
 
 fn main() {
     let cli = Cli::parse();
-    let interface = DnsInterface::new();
 
     match cli.command {
         Commands::Set { name } => {
-            let server_list = interface.server_list();
+            let server_list = DnsInterface::server_list();
 
-            interface.set_dns_static(
+            DnsInterface::set_dns_static(
                 &server_list
                     .iter()
                     .find(|&dns| dns.name == name)
@@ -79,7 +78,7 @@ fn main() {
                 return;
             }
 
-            let mut servers = interface.server_list();
+            let mut servers = DnsInterface::server_list();
 
             if servers.iter().any(|dns| dns.conflicts_with(&raw_dns)) {
                 eprintln!("Another DNS with same name/addr exists!");
@@ -87,11 +86,11 @@ fn main() {
             }
 
             servers.push(raw_dns);
-            interface.write_servers(&servers);
+            DnsInterface::write_servers(&servers);
         }
 
         Commands::Rem { names } => {
-            let mut servers = interface.server_list();
+            let mut servers = DnsInterface::server_list();
 
             for name in names {
                 if let Some((dns_pos, _)) =
@@ -104,7 +103,7 @@ fn main() {
                 }
             }
 
-            interface.write_servers(&servers);
+            DnsInterface::write_servers(&servers);
         }
         Commands::Direct {
             primary,
@@ -113,7 +112,7 @@ fn main() {
             dhcp,
         } => {
             if dhcp {
-                interface.set_dns_dhcp(v6);
+                DnsInterface::set_dns_dhcp(v6);
             } else {
                 let dns_res = DnsServer::build(
                     primary.expect("clap should avoid empty servers when DHCP is not set"),
@@ -121,14 +120,13 @@ fn main() {
                     v6,
                 );
                 match dns_res {
-                    Ok(ref dns_server) => interface.set_dns_static(dns_server),
+                    Ok(ref dns_server) => DnsInterface::set_dns_static(dns_server),
                     Err(_) => eprintln!("Invalid DNS address format!"),
                 }
             }
         }
 
-        Commands::List => interface
-            .server_list()
+        Commands::List => DnsInterface::server_list()
             .iter()
             .for_each(|dns| println!("{dns}")),
     }

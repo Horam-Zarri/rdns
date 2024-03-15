@@ -1,3 +1,5 @@
+#![cfg(target_os = "windows")]
+
 use super::OsInterface;
 use crate::dns::DnsServer;
 use std::error::Error;
@@ -7,10 +9,10 @@ pub struct Windows;
 const CONFIG_FILE: &str = "rdns_servers.json";
 
 impl OsInterface for Windows {
-    fn config_file(&self) -> &'static str {
+    fn config_file() -> &'static str {
         CONFIG_FILE
     }
-    fn active_connections(&self) -> Vec<String> {
+    fn active_connections() -> Vec<String> {
         let ip_config = String::from_utf8(
             Command::new("netsh")
                 .args(["interface", "show", "interface"])
@@ -30,7 +32,7 @@ impl OsInterface for Windows {
             .collect()
     }
 
-    fn set_static(&self, dns: &DnsServer, adapter: &str) -> Result<(), Box<dyn Error>> {
+    fn set_static(dns: &DnsServer, adapter: &str) -> Result<(), Box<dyn Error>> {
         let ip_ver = if dns.v6 { "ipv6" } else { "ipv4" };
 
         runas::Command::new("netsh")
@@ -61,7 +63,7 @@ impl OsInterface for Windows {
         Ok(())
     }
 
-    fn set_dhcp(&self, adapter: &str, v6: bool) -> Result<(), Box<dyn Error>> {
+    fn set_dhcp(adapter: &str, v6: bool) -> Result<(), Box<dyn Error>> {
         let ip_ver = if v6 { "ipv6" } else { "ipv4" };
 
         runas::Command::new("netsh")

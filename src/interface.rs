@@ -1,36 +1,33 @@
 use crate::dns::DnsServer;
+use crate::interface::linux::Linux;
 use std::error::Error;
 use std::fs::{File, OpenOptions};
 use std::io;
 use std::io::{Read, Write};
 
+#[cfg(target_os = "linux")]
 mod linux;
+#[cfg(target_os = "windows")]
 mod windows;
 
+#[cfg(target_os = "linux")]
+type SYSTEM_INTERFACE = linux::Linux;
+
+#[cfg(target_os = "windows")]
+type SYSTEM_INTERFACE = windows::Windows;
+
 trait OsInterface {
-    fn config_file(&self) -> &'static str;
-    fn active_connections(&self) -> Vec<String>;
-    fn set_static(&self, dns: &DnsServer, adapter: &str) -> Result<(), Box<dyn Error>>;
-    fn set_dhcp(&self, adapter: &str, v6: bool) -> Result<(), Box<dyn Error>>;
+    fn config_file() -> &'static str;
+    fn active_connections() -> Vec<String>;
+    fn set_static(dns: &DnsServer, adapter: &str) -> Result<(), Box<dyn Error>>;
+    fn set_dhcp(adapter: &str, v6: bool) -> Result<(), Box<dyn Error>>;
 }
 
-pub struct DnsInterface(Box<dyn OsInterface>);
+pub struct DnsInterface;
 
 impl DnsInterface {
-    pub fn new() -> Self {
-        if cfg!(target_os = "windows") {
-            DnsInterface(Box::new(windows::Windows))
-        }
-        //else if cfg!(target_os = "linux") {
-        //    DnsInterface(Box::new(linux::Linux))
-        //}
-        else {
-            panic!("Operating system is not supported");
-        }
-    }
-
-    pub fn server_list(&self) -> Vec<DnsServer> {
-        let config_file = self.0.config_file();
+    pub fn server_list() -> Vec<DnsServer> {
+        let config_file = SYSTEM_INTERFACE::config_file();
 
         if let Ok(mut file) = File::open(config_file) {
             let mut contents = String::new();
@@ -47,8 +44,8 @@ impl DnsInterface {
         }
     }
 
-    pub fn write_servers(&self, servers: &Vec<DnsServer>) {
-        let config_file = self.0.config_file();
+    pub fn write_servers(servers: &Vec<DnsServer>) {
+        let config_file = SYSTEM_INTERFACE::config_file();
         let str_rep = serde_json::to_string(&servers).unwrap();
 
         OpenOptions::new()
@@ -60,25 +57,22 @@ impl DnsInterface {
             .unwrap();
     }
 
-    pub fn set_dns_static(&self, dns_server: &DnsServer) {
-        if let Err(e) = self
-            .0
-            .set_static(dns_server, self.target_adapter().as_str())
-        {
+    pub fn set_dns_static(dns_server: &DnsServer) {
+        if let Err(e) = SYSTEM_INTERFACE::set_static(dns_server, Self::target_adapter().as_str()) {
             eprintln!("Failed to set DNS: {e:?}");
             std::process::abort();
         }
     }
 
-    pub fn set_dns_dhcp(&self, v6: bool) {
-        if let Err(e) = self.0.set_dhcp(self.target_adapter().as_str(), v6) {
+    pub fn set_dns_dhcp(v6: bool) {
+        if let Err(e) = SYSTEM_INTERFACE::set_dhcp(Self::target_adapter().as_str(), v6) {
             eprintln!("Failed to set DNS: {e:?}");
             std::process::abort();
         }
     }
 
-    fn target_adapter(&self) -> String {
-        let adapters = self.0.active_connections();
+    fn target_adapter() -> String {
+        let adapters = SYSTEM_INTERFACE::active_connections();
 
         if adapters.len() == 1 {
             adapters[0].clone()
