@@ -6,7 +6,7 @@ rdns is a CLI utility that can set your system DNS, either directly or by making
 so that you can change your internet DNS settings blazingly fast🔥  
 
 ### **CAUTION**  
-⚠️ rdns is currently only available for Windows (you can contribute and add support for your OS of choice)  
+⚠️ rdns is currently only available for Windows and Linux  
 ⚠️ rdns uses user elevation to change DNS settings
 
 ## Usage
