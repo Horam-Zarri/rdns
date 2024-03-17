@@ -1,5 +1,4 @@
 use crate::dns::DnsServer;
-use crate::interface::linux::Linux;
 use std::error::Error;
 use std::fs::{File, OpenOptions};
 use std::io;

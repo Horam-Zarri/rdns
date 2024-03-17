@@ -8,7 +8,7 @@ use clap::Subcommand;
 
 #[derive(Parser)]
 #[command(name = "rdns")]
-#[command(version = "0.1.0")]
+#[command(version = "0.2.0")]
 #[command(about, long_about = None)]
 struct Cli {
     #[command(subcommand)]
