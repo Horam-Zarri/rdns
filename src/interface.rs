@@ -43,20 +43,15 @@ pub struct DnsInterface;
 impl DnsInterface {
     pub fn server_list() -> Vec<DnsServer> {
         let config_file = SYSTEM_INTERFACE::config_path();
+        let mut configs = vec![];
 
         if let Ok(mut file) = File::open(config_file.clone()) {
             let mut contents = String::new();
             file.read_to_string(&mut contents).unwrap();
-
-            if !contents.is_empty() {
-                serde_json::from_str(&contents).unwrap()
-            } else {
-                Vec::new()
-            }
-        } else {
-            File::create(config_file).expect("Could not create config file!");
-            Vec::new()
+            configs = serde_json::from_str(&contents).unwrap();
         }
+
+        configs
     }
 
     pub fn write_servers(servers: &Vec<DnsServer>) {
