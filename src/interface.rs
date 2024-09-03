@@ -62,12 +62,13 @@ impl DnsInterface {
                 std::process::abort();
             }
         }
-        let config_file = SYSTEM_INTERFACE::config_dir();
+        let config_file = SYSTEM_INTERFACE::config_path();
         let str_rep = serde_json::to_string(&servers).unwrap();
 
         std::fs::OpenOptions::new()
             .write(true)
             .truncate(true)
+            .create(true)
             .open(config_file)
             .unwrap()
             .write_all(str_rep.as_bytes())
