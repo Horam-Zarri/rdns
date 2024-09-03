@@ -9,9 +9,6 @@ pub struct Windows;
 const CONFIG_FILE: &str = "rdns_servers.json";
 
 impl OsInterface for Windows {
-    fn config_file() -> &'static str {
-        CONFIG_FILE
-    }
     fn active_connections() -> Vec<String> {
         let ip_config = String::from_utf8(
             Command::new("netsh")

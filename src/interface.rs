@@ -1,6 +1,9 @@
 use crate::dns::DnsServer;
+use std::cell::OnceCell;
 use std::error::Error;
 use std::fs::{File, OpenOptions};
+use std::ops::Deref;
+use std::path::{self, Path, PathBuf};
 use std::io;
 use std::io::{Read, Write};
 
@@ -15,20 +18,33 @@ type SYSTEM_INTERFACE = linux::Linux;
 #[cfg(target_os = "windows")]
 type SYSTEM_INTERFACE = windows::Windows;
 
+const CONFIG_DIR: &str = "rdns";
+const CONFIG_FILE: &str = "rdns_servers.json";
+
 trait OsInterface {
-    fn config_file() -> &'static str;
     fn active_connections() -> Vec<String>;
     fn set_static(dns: &DnsServer, adapter: &str) -> Result<(), Box<dyn Error>>;
     fn set_dhcp(adapter: &str, v6: bool) -> Result<(), Box<dyn Error>>;
+
+    fn config_dir() -> String {
+        format!("{}{}{}", directories::BaseDirs::new()
+            .unwrap().config_local_dir().to_str()
+            .unwrap().to_string(), std::path::MAIN_SEPARATOR, CONFIG_DIR)
+    }
+
+    fn config_path() -> String {
+        format!("{}{}{}", Self::config_dir(),
+            std::path::MAIN_SEPARATOR, CONFIG_FILE)
+    }
 }
 
 pub struct DnsInterface;
 
 impl DnsInterface {
     pub fn server_list() -> Vec<DnsServer> {
-        let config_file = SYSTEM_INTERFACE::config_file();
+        let config_file = SYSTEM_INTERFACE::config_path();
 
-        if let Ok(mut file) = File::open(config_file) {
+        if let Ok(mut file) = File::open(config_file.clone()) {
             let mut contents = String::new();
             file.read_to_string(&mut contents).unwrap();
 
@@ -44,10 +60,17 @@ impl DnsInterface {
     }
 
     pub fn write_servers(servers: &Vec<DnsServer>) {
-        let config_file = SYSTEM_INTERFACE::config_file();
+        let config_dir = SYSTEM_INTERFACE::config_dir();
+        if !Path::new(&config_dir).exists() {
+            if let Err(e) = std::fs::create_dir(config_dir) {
+                eprintln!("Could not create config file's directory: {e:?}");
+                std::process::abort();
+            }
+        }
+        let config_file = SYSTEM_INTERFACE::config_dir();
         let str_rep = serde_json::to_string(&servers).unwrap();
 
-        OpenOptions::new()
+        std::fs::OpenOptions::new()
             .write(true)
             .truncate(true)
             .open(config_file)

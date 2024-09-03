@@ -6,12 +6,7 @@ use std::error::Error;
 use std::process::{Command, Stdio};
 
 pub struct Linux;
-const CONFIG_FILE: &str = "rdns_servers.json";
 impl OsInterface for Linux {
-    fn config_file() -> &'static str {
-        CONFIG_FILE
-    }
-
     fn active_connections() -> Vec<String> {
         let nmcli = String::from_utf8(
             Command::new("nmcli")
